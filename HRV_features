@@ -1,1 +1,49 @@
+import pandas as pd
+import neurokit2 as nk
+import time
+
+def calculate_hrv_fast(rr_intervals, output_file="hrv_features.csv"):
+    """
+    Calculates HRV features quickly and saves them to a CSV.
+
+    Args:
+        rr_file (str): Path to the RR interval CSV file.
+        output_file (str): Path to the output CSV file.
+    """
+    try:
+        start_time = time.time()  # Start timing
+
+        # Load RR Intervals (example: from a CSV file)
+        rr_intervals = pd.read_csv(rr_intervals)["RR_Interval_ms"]
+
+        # Convert RR intervals to peak indices
+        peaks = nk.intervals_to_peaks(rr_intervals)
+
+        # Calculate HRV time-domain features
+        hrv_time = nk.hrv_time(peaks, sampling_rate=1000)
+
+        # Calculate HRV frequency-domain features (using peaks)
+        hrv_freq = nk.hrv_frequency(peaks, sampling_rate=1000)
+
+        # Compute Nonlinear Features (Poincaré Plot)
+        hrv_nonlinear = nk.hrv_nonlinear(peaks, sampling_rate=1000)
+
+        # Combine Results
+        hrv_features = hrv_time.join(hrv_freq).join(hrv_nonlinear)
+
+        # Save to CSV
+        hrv_features.to_csv(output_file)
+
+        end_time = time.time()  # End timing
+        elapsed_time = end_time - start_time
+
+        print(f"HRV features saved to {output_file} in {elapsed_time:.2f} seconds.")
+
+    except FileNotFoundError:
+        print(f"Error: File not found at {rr_file}")
+    except KeyError:
+        print("Error: 'RR_Interval_ms' column not found in CSV.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
 
